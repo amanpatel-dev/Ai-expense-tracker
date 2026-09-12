@@ -4,55 +4,50 @@ const Transaction = require("../models/Transaction");
 
 const addTransaction = async (req, res) => {
   try {
-    
     const { amount, type, category, description } = req.body;
-    console.log(res);
 
     const transaction = new Transaction({
+      user: req.user.id,
       amount,
       type,
       category,
-      description
+      description,
     });
 
     const savedTransaction = await transaction.save();
 
     res.status(201).json(savedTransaction);
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server Error" });
   }
 };
 
-//
-
 const getTransactions = async (req, res) => {
   try {
-
-    const transactions = await Transaction.find().sort({ createdAt: -1 });
+    const transactions = await Transaction.find({ user: req.user.id }).sort({
+      createdAt: -1,
+    });
 
     res.status(200).json(transactions);
-
   } catch (error) {
     res.status(500).json({ message: "Server Error" });
   }
 };
 
-// delete by id using the function  findByIdAndDelete();
-
+// Delete only if this transaction belongs to the logged-in user
 const deleteTransaction = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const transaction = await Transaction.findByIdAndDelete(id);
+    const transaction = await Transaction.findOneAndDelete({
+      _id: req.params.id,
+      user: req.user.id,
+    });
 
     if (!transaction) {
       return res.status(404).json({ message: "Transaction not found" });
     }
 
     res.status(200).json({ message: "Transaction deleted successfully" });
-
   } catch (error) {
     res.status(500).json({ message: "Server Error" });
   }
@@ -60,7 +55,7 @@ const deleteTransaction = async (req, res) => {
 
 const getSummary = async (req, res) => {
   try {
-    const transactions = await Transaction.find();
+    const transactions = await Transaction.find({ user: req.user.id });
 
     let income = 0;
     let expense = 0;
@@ -78,12 +73,16 @@ const getSummary = async (req, res) => {
     res.status(200).json({
       totalIncome: income,
       totalExpense: expense,
-      balance: balance
+      balance: balance,
     });
-
   } catch (error) {
     res.status(500).json({ message: "Server Error" });
   }
 };
 
-module.exports = { addTransaction , getTransactions ,deleteTransaction , getSummary };
+module.exports = {
+  addTransaction,
+  getTransactions,
+  deleteTransaction,
+  getSummary,
+};

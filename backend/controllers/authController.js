@@ -22,7 +22,12 @@ const register = async (req, res) =>{
             password:hashedPassword,
         });
 
-        res.status(201).json(user);
+        // Never send password hash back to the client
+        res.status(201).json({
+            id: user._id,
+            name: user.name,
+            email: user.email,
+        });
 
     }
     catch(error){
