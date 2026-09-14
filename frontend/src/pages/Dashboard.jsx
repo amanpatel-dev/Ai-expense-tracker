@@ -3,11 +3,32 @@ import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { Summary, AddTransactions } from "../components";
 
+const TRANSACTION_CATEGORIES = [
+  "Food",
+  "Transport",
+  "Shopping",
+  "Entertainment",
+  "Bills",
+  "Health",
+  "Education",
+  "Other",
+];
+
 const emptyEditForm = {
-  amount: "",
   type: "expense",
+  amount: "",
+  merchant: "",
   category: "",
   description: "",
+  date: "",
+};
+
+// Convert Mongo/ISO date to YYYY-MM-DD for <input type="date" />
+const toDateInputValue = (dateValue) => {
+  if (!dateValue) return "";
+  const d = new Date(dateValue);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString().slice(0, 10);
 };
 
 const Dashboard = () => {
@@ -50,10 +71,12 @@ const Dashboard = () => {
   const startEdit = (t) => {
     setEditingId(t._id);
     setEditForm({
-      amount: t.amount,
-      type: t.type,
-      category: t.category,
+      type: t.type || "expense",
+      amount: t.amount ?? "",
+      merchant: t.merchant || "",
+      category: t.category || "",
       description: t.description || "",
+      date: toDateInputValue(t.date),
     });
   };
 
@@ -72,8 +95,17 @@ const Dashboard = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
 
+    const payload = {
+      amount: editForm.amount,
+      type: editForm.type,
+      category: editForm.category,
+      description: editForm.description,
+      merchant: editForm.merchant,
+      date: editForm.date,
+    };
+
     try {
-      const res = await API.put(`/transactions/${editingId}`, editForm);
+      const res = await API.put(`/transactions/${editingId}`, payload);
 
       // Replace the old item in the list with the updated one
       setTransactions(
@@ -122,14 +154,7 @@ const Dashboard = () => {
             <div key={t._id} className="bg-gray-50 p-3 rounded-lg mb-2">
               {editingId === t._id ? (
                 <form onSubmit={handleUpdate} className="space-y-2">
-                  <input
-                    type="number"
-                    name="amount"
-                    value={editForm.amount}
-                    onChange={handleEditChange}
-                    className="border p-2 w-full rounded"
-                    required
-                  />
+                  <label className="block text-sm text-gray-600">Type</label>
                   <select
                     name="type"
                     value={editForm.type}
@@ -139,14 +164,52 @@ const Dashboard = () => {
                     <option value="expense">Expense</option>
                     <option value="income">Income</option>
                   </select>
+
+                  <label className="block text-sm text-gray-600">Amount</label>
+                  <input
+                    type="number"
+                    name="amount"
+                    value={editForm.amount}
+                    onChange={handleEditChange}
+                    className="border p-2 w-full rounded"
+                    required
+                  />
+
+                  <label className="block text-sm text-gray-600">Merchant</label>
                   <input
                     type="text"
+                    name="merchant"
+                    value={editForm.merchant}
+                    onChange={handleEditChange}
+                    className="border p-2 w-full rounded"
+                    placeholder="Merchant (optional)"
+                  />
+
+                  <label className="block text-sm text-gray-600">Category</label>
+                  <select
                     name="category"
                     value={editForm.category}
                     onChange={handleEditChange}
                     className="border p-2 w-full rounded"
                     required
-                  />
+                  >
+                    <option value="">Select category</option>
+                    {!TRANSACTION_CATEGORIES.includes(editForm.category) &&
+                      editForm.category && (
+                        <option value={editForm.category}>
+                          {editForm.category}
+                        </option>
+                      )}
+                    {TRANSACTION_CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+
+                  <label className="block text-sm text-gray-600">
+                    Description
+                  </label>
                   <input
                     type="text"
                     name="description"
@@ -154,6 +217,16 @@ const Dashboard = () => {
                     onChange={handleEditChange}
                     className="border p-2 w-full rounded"
                   />
+
+                  <label className="block text-sm text-gray-600">Date</label>
+                  <input
+                    type="date"
+                    name="date"
+                    value={editForm.date}
+                    onChange={handleEditChange}
+                    className="border p-2 w-full rounded"
+                  />
+
                   <div className="flex gap-2">
                     <button
                       type="submit"
