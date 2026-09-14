@@ -29,6 +29,9 @@ app.use(express.json());
 // })
 app.use("/api/transactions", transactionRoutes);
 
+const aiRoutes = require("./routes/aiRoutes");
+app.use("/api/ai", aiRoutes);
+
 
 app.get("/", (req, res) => {
     res.send("Expense Tracker API Running");
