@@ -118,6 +118,24 @@ const Dashboard = () => {
     }
   };
 
+  const formatAmountDisplay = (type, amount) => {
+    const formatted = Number(amount).toLocaleString("en-IN", {
+      maximumFractionDigits: 2,
+    });
+    return type === "income" ? `+ ₹${formatted}` : `- ₹${formatted}`;
+  };
+
+  const formatDateDisplay = (dateValue) => {
+    if (!dateValue) return "—";
+    const d = new Date(dateValue);
+    if (Number.isNaN(d.getTime())) return "—";
+    return d.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -140,143 +158,202 @@ const Dashboard = () => {
 
       <AddTransactions onAdd={handleAdd} />
 
-      <div className="bg-white p-4 rounded-xl shadow">
-        <h2 className="text-xl font-semibold mb-4">Transactions</h2>
+      <div className="bg-white p-4 md:p-5 rounded-2xl shadow border border-gray-100">
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Transactions</h2>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {transactions.length}{" "}
+            {transactions.length === 1 ? "transaction" : "transactions"}
+          </p>
+        </div>
 
         {loading ? (
-          <div className="text-center py-4 text-gray-500">
+          <div className="text-center py-8 text-gray-500">
             Loading transactions...
           </div>
         ) : transactions.length === 0 ? (
-          <p>No transactions yet</p>
+          <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-12 text-center">
+            <p className="text-gray-800 font-medium mb-1">No transactions yet</p>
+            <p className="text-sm text-gray-500">
+              Add a transaction manually or scan a receipt to get started.
+            </p>
+          </div>
         ) : (
-          transactions.map((t) => (
-            <div key={t._id} className="bg-gray-50 p-3 rounded-lg mb-2">
-              {editingId === t._id ? (
-                <form onSubmit={handleUpdate} className="space-y-2">
-                  <label className="block text-sm text-gray-600">Type</label>
-                  <select
-                    name="type"
-                    value={editForm.type}
-                    onChange={handleEditChange}
-                    className="border p-2 w-full rounded"
-                  >
-                    <option value="expense">Expense</option>
-                    <option value="income">Income</option>
-                  </select>
+          <div className="space-y-3">
+            {transactions.map((t) => (
+              <div
+                key={t._id}
+                className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md hover:border-gray-200 transition-shadow"
+              >
+                {editingId === t._id ? (
+                  <form onSubmit={handleUpdate} className="space-y-2">
+                    <label className="block text-sm text-gray-600">Type</label>
+                    <select
+                      name="type"
+                      value={editForm.type}
+                      onChange={handleEditChange}
+                      className="border p-2 w-full rounded"
+                    >
+                      <option value="expense">Expense</option>
+                      <option value="income">Income</option>
+                    </select>
 
-                  <label className="block text-sm text-gray-600">Amount</label>
-                  <input
-                    type="number"
-                    name="amount"
-                    value={editForm.amount}
-                    onChange={handleEditChange}
-                    className="border p-2 w-full rounded"
-                    required
-                  />
+                    <label className="block text-sm text-gray-600">Amount</label>
+                    <input
+                      type="number"
+                      name="amount"
+                      value={editForm.amount}
+                      onChange={handleEditChange}
+                      className="border p-2 w-full rounded"
+                      required
+                    />
 
-                  <label className="block text-sm text-gray-600">Merchant</label>
-                  <input
-                    type="text"
-                    name="merchant"
-                    value={editForm.merchant}
-                    onChange={handleEditChange}
-                    className="border p-2 w-full rounded"
-                    placeholder="Merchant (optional)"
-                  />
+                    <label className="block text-sm text-gray-600">
+                      Merchant
+                    </label>
+                    <input
+                      type="text"
+                      name="merchant"
+                      value={editForm.merchant}
+                      onChange={handleEditChange}
+                      className="border p-2 w-full rounded"
+                      placeholder="Merchant (optional)"
+                    />
 
-                  <label className="block text-sm text-gray-600">Category</label>
-                  <select
-                    name="category"
-                    value={editForm.category}
-                    onChange={handleEditChange}
-                    className="border p-2 w-full rounded"
-                    required
-                  >
-                    <option value="">Select category</option>
-                    {!TRANSACTION_CATEGORIES.includes(editForm.category) &&
-                      editForm.category && (
-                        <option value={editForm.category}>
-                          {editForm.category}
+                    <label className="block text-sm text-gray-600">
+                      Category
+                    </label>
+                    <select
+                      name="category"
+                      value={editForm.category}
+                      onChange={handleEditChange}
+                      className="border p-2 w-full rounded"
+                      required
+                    >
+                      <option value="">Select category</option>
+                      {!TRANSACTION_CATEGORIES.includes(editForm.category) &&
+                        editForm.category && (
+                          <option value={editForm.category}>
+                            {editForm.category}
+                          </option>
+                        )}
+                      {TRANSACTION_CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
                         </option>
-                      )}
-                    {TRANSACTION_CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
+                      ))}
+                    </select>
 
-                  <label className="block text-sm text-gray-600">
-                    Description
-                  </label>
-                  <input
-                    type="text"
-                    name="description"
-                    value={editForm.description}
-                    onChange={handleEditChange}
-                    className="border p-2 w-full rounded"
-                  />
+                    <label className="block text-sm text-gray-600">
+                      Description
+                    </label>
+                    <input
+                      type="text"
+                      name="description"
+                      value={editForm.description}
+                      onChange={handleEditChange}
+                      className="border p-2 w-full rounded"
+                    />
 
-                  <label className="block text-sm text-gray-600">Date</label>
-                  <input
-                    type="date"
-                    name="date"
-                    value={editForm.date}
-                    onChange={handleEditChange}
-                    className="border p-2 w-full rounded"
-                  />
+                    <label className="block text-sm text-gray-600">Date</label>
+                    <input
+                      type="date"
+                      name="date"
+                      value={editForm.date}
+                      onChange={handleEditChange}
+                      className="border p-2 w-full rounded"
+                    />
 
-                  <div className="flex gap-2">
-                    <button
-                      type="submit"
-                      className="bg-blue-500 text-white px-3 py-1 rounded"
-                    >
-                      Save
-                    </button>
-                    <button
-                      type="button"
-                      onClick={cancelEdit}
-                      className="bg-gray-300 px-3 py-1 rounded"
-                    >
-                      Cancel
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        type="submit"
+                        className="bg-blue-500 text-white px-3 py-1 rounded"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelEdit}
+                        className="bg-gray-300 px-3 py-1 rounded"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    {/* Left: category + description */}
+                    <div className="flex items-start gap-3 min-w-0 md:flex-1">
+                      <div
+                        className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
+                          t.type === "income"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {(t.category || "?").charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-semibold text-gray-900">
+                            {t.category}
+                          </p>
+                          {t.source === "receipt_ai" && (
+                            <span className="text-[10px] font-medium uppercase tracking-wide text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
+                              AI Receipt
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500 truncate">
+                          {t.description || "No description"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Middle: merchant + date */}
+                    <div className="md:w-40 lg:w-48 shrink-0 pl-12 md:pl-0">
+                      <p className="text-sm text-gray-700 truncate">
+                        {t.merchant ? t.merchant : "—"}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {formatDateDisplay(t.date)}
+                      </p>
+                    </div>
+
+                    {/* Right: amount + actions */}
+                    <div className="flex items-center justify-between md:justify-end gap-3 shrink-0 pl-12 md:pl-0">
+                      <span
+                        className={`font-bold text-base whitespace-nowrap ${
+                          t.type === "income"
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {formatAmountDisplay(t.type, t.amount)}
+                      </span>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => startEdit(t)}
+                          className="text-xs font-medium text-blue-600 hover:text-blue-800 border border-blue-100 bg-blue-50 px-2.5 py-1 rounded-md"
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          onClick={() => handleDelete(t._id)}
+                          className="text-xs font-medium text-red-600 hover:text-red-800 border border-red-100 bg-red-50 px-2.5 py-1 rounded-md"
+                          aria-label="Delete transaction"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </form>
-              ) : (
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-semibold">{t.category}</p>
-                    <p className="text-sm text-gray-500">{t.description}</p>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <span
-                      className={`font-bold ${
-                        t.type === "income" ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      ₹{t.amount}
-                    </span>
-
-                    <button
-                      onClick={() => startEdit(t)}
-                      className="text-blue-500 hover:text-blue-700"
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      onClick={() => handleDelete(t._id)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))
+                )}
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>
