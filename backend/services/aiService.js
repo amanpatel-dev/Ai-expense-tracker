@@ -121,7 +121,84 @@ Return JSON with this exact shape:
   return parseJsonFromAI(content);
 }
 
+async function generateExpenseSummary(transactions) {
+  const prompt = `You are an expense analysis assistant.
+
+Analyze the provided transactions and calculate:
+
+1. Total expenses
+2. Total income
+3. Spending by category
+4. Highest spending category
+5. Number of expense transactions
+6. Number of income transactions
+7. A few useful spending insights
+
+Important:
+- Use ONLY the provided transaction data.
+- Do not invent numbers.
+- Calculate totals from the transactions.
+- Return ONLY valid JSON.
+- Do not use markdown.
+- Do not include currency symbols in numeric values.
+
+Return exactly this structure:
+{
+  "totalExpense": 0,
+  "totalIncome": 0,
+  "expenseTransactionCount": 0,
+  "incomeTransactionCount": 0,
+  "topCategory": "Food",
+  "categoryBreakdown": {
+    "Food": 0,
+    "Transport": 0,
+    "Shopping": 0,
+    "Entertainment": 0,
+    "Bills": 0,
+    "Health": 0,
+    "Education": 0,
+    "Other": 0
+  },
+  "insights": [
+    "string",
+    "string"
+  ]
+}
+
+Transactions:
+${JSON.stringify(transactions)}`;
+
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "openrouter/free",
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    const message =
+      data?.error?.message || data?.message || JSON.stringify(data);
+    throw new Error(`OpenRouter error ${response.status}: ${message}`);
+  }
+
+  const content = data.choices[0].message.content;
+  return parseJsonFromAI(content);
+}
+
 module.exports = {
   testAI,
   analyzeReceiptImage,
+  generateExpenseSummary,
 };

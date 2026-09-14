@@ -1,4 +1,7 @@
-const { analyzeReceiptImage } = require("../services/aiService");
+const {
+  analyzeReceiptImage,
+  generateExpenseSummary,
+} = require("../services/aiService");
 const Transaction = require("../models/Transaction");
 
 const scanReceipt = async (req, res) => {
@@ -20,7 +23,7 @@ const scanReceipt = async (req, res) => {
   }
 };
 
-// Prepare the logged-in user's transactions for a future AI summary (no AI call yet)
+// Auth + date filter + prepare data → AI summary → return result
 const getExpenseSummary = async (req, res) => {
   try {
     const allowedRanges = [7, 10, 30];
@@ -51,12 +54,14 @@ const getExpenseSummary = async (req, res) => {
       source: t.source || "manual",
     }));
 
+    const aiSummary = await generateExpenseSummary(summaryData);
+
     return res.status(200).json({
       range,
       startDate,
       endDate,
       transactionCount: summaryData.length,
-      transactions: summaryData,
+      summary: aiSummary,
     });
   } catch (error) {
     console.error(error);

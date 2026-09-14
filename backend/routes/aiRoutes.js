@@ -2,7 +2,7 @@ const express = require("express");
 const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
-const { scanReceipt } = require("../controllers/aiController");
+const { scanReceipt, getExpenseSummary } = require("../controllers/aiController");
 const protect = require("../middleware/authMiddleware");
 
 const router = express.Router();
@@ -43,5 +43,7 @@ router.post(
   upload.single("receipt"),
   scanReceipt
 );
+
+router.get("/expense-summary", protect, getExpenseSummary);
 
 module.exports = router;
