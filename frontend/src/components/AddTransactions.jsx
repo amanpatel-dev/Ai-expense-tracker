@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import API from "../services/api";
 
 const TRANSACTION_CATEGORIES = [
@@ -23,6 +23,7 @@ const emptyManualForm = {
 
 const AddTransaction = ({ onAdd }) => {
   const [form, setForm] = useState(emptyManualForm);
+  const fileInputRef = useRef(null);
 
   const [receiptFile, setReceiptFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -89,21 +90,20 @@ const AddTransaction = ({ onAdd }) => {
     setScanError("");
     setConfirmError("");
     setConfirmSuccess("");
+
+    if (file) {
+      setPreviewUrl(URL.createObjectURL(file));
+    }
   };
 
-  const handleViewReceipt = () => {
-    if (!receiptFile) return;
-
-    setPreviewUrl((prev) => {
-      if (prev) {
-        URL.revokeObjectURL(prev);
-      }
-      return URL.createObjectURL(receiptFile);
-    });
-  };
-
-  const handleHideReceipt = () => {
+  const handleRemoveReceipt = () => {
     clearPreview();
+    setReceiptFile(null);
+    setReceiptData(null);
+    setScanError("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleScanReceipt = async () => {
@@ -196,6 +196,9 @@ const AddTransaction = ({ onAdd }) => {
       clearPreview();
       setReceiptFile(null);
       setReceiptData(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       setConfirmSuccess("Expense added successfully");
     } catch (error) {
       const message =
@@ -208,8 +211,241 @@ const AddTransaction = ({ onAdd }) => {
     }
   };
 
+  const currentStep = receiptData ? 3 : scanning ? 2 : 1;
+
   return (
     <div className="mb-6">
+      {/* Scan Receipt — ABOVE manual Add Transaction */}
+      <div className="bg-white p-5 md:p-6 rounded-2xl shadow border border-gray-100 mb-4">
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Scan Receipt</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Turn your receipt into an expense automatically.
+            </p>
+            <p className="text-sm text-gray-400">
+              Upload a receipt and we&apos;ll extract the details for you.
+            </p>
+          </div>
+          <span className="text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
+            ✦ AI Powered
+          </span>
+        </div>
+
+        {/* Simple stage indicator */}
+        <div className="flex flex-wrap items-center gap-2 text-xs mb-5 mt-4">
+          <span
+            className={`px-2.5 py-1 rounded-full border ${
+              currentStep === 1
+                ? "bg-blue-50 border-blue-200 text-blue-700 font-medium"
+                : "bg-gray-50 border-gray-200 text-gray-500"
+            }`}
+          >
+            1. Upload Receipt
+          </span>
+          <span className="text-gray-300">→</span>
+          <span
+            className={`px-2.5 py-1 rounded-full border ${
+              currentStep === 2
+                ? "bg-blue-50 border-blue-200 text-blue-700 font-medium"
+                : "bg-gray-50 border-gray-200 text-gray-500"
+            }`}
+          >
+            2. AI Extraction
+          </span>
+          <span className="text-gray-300">→</span>
+          <span
+            className={`px-2.5 py-1 rounded-full border ${
+              currentStep === 3
+                ? "bg-blue-50 border-blue-200 text-blue-700 font-medium"
+                : "bg-gray-50 border-gray-200 text-gray-500"
+            }`}
+          >
+            3. Review & Confirm
+          </span>
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+          onChange={handleReceiptSelect}
+          className="hidden"
+        />
+
+        {!receiptFile ? (
+          <div className="rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 px-4 py-8 text-center max-w-xl mx-auto">
+            <div className="text-3xl mb-2" aria-hidden="true">
+              📷
+            </div>
+            <p className="font-semibold text-gray-800 mb-1">
+              Upload your receipt
+            </p>
+            <p className="text-sm text-gray-500 mb-4">
+              Supported: JPG, PNG, WebP
+            </p>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="bg-white border border-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-100 font-medium"
+            >
+              Choose Image
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start max-w-3xl mx-auto">
+            <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
+              {previewUrl ? (
+                <img
+                  src={previewUrl}
+                  alt="Receipt preview"
+                  className="w-full max-h-64 object-contain rounded-lg bg-white"
+                />
+              ) : (
+                <div className="h-40 flex items-center justify-center text-gray-400 text-sm">
+                  Preview unavailable
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">
+                  Selected file
+                </p>
+                <p className="text-sm font-medium text-gray-800 break-all">
+                  {receiptFile.name}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-sm border border-gray-200 bg-white px-3 py-1.5 rounded-lg hover:bg-gray-50"
+                >
+                  Change Image
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRemoveReceipt}
+                  className="text-sm border border-red-100 bg-red-50 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-100"
+                >
+                  Remove
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleScanReceipt}
+                disabled={scanning || !receiptFile}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium disabled:opacity-50 w-full sm:w-auto"
+              >
+                {scanning ? "Scanning..." : "Scan Receipt"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {scanError && (
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600 max-w-3xl mx-auto">
+            {scanError}
+          </div>
+        )}
+
+        {confirmSuccess && (
+          <div className="mt-4 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 max-w-3xl mx-auto">
+            {confirmSuccess}
+          </div>
+        )}
+
+        {receiptData && (
+          <form
+            onSubmit={handleConfirmExpense}
+            className="mt-6 p-4 md:p-5 bg-indigo-50/40 rounded-xl border border-indigo-100 space-y-3 max-w-3xl mx-auto"
+          >
+            <div className="mb-2">
+              <h3 className="font-semibold text-indigo-950">
+                AI extracted your expense details
+              </h3>
+              <p className="text-sm text-gray-500">
+                Review and correct anything before saving.
+              </p>
+            </div>
+
+            <p className="text-sm text-gray-600">
+              Type: <span className="font-medium text-gray-800">Expense</span>
+            </p>
+
+            <label className="block text-sm text-gray-600">Merchant</label>
+            <input
+              type="text"
+              name="merchant"
+              value={receiptData.merchant}
+              onChange={handleReceiptDataChange}
+              className="border border-gray-200 p-2 w-full rounded-lg bg-white"
+            />
+
+            <label className="block text-sm text-gray-600">Amount</label>
+            <input
+              type="number"
+              name="amount"
+              value={receiptData.amount}
+              onChange={handleReceiptDataChange}
+              className="border border-gray-200 p-2 w-full rounded-lg bg-white"
+            />
+
+            <label className="block text-sm text-gray-600">Category</label>
+            <select
+              name="category"
+              value={receiptData.category}
+              onChange={handleReceiptDataChange}
+              className="border border-gray-200 p-2 w-full rounded-lg bg-white"
+            >
+              <option value="">Select category</option>
+              {TRANSACTION_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+
+            <label className="block text-sm text-gray-600">Description</label>
+            <textarea
+              name="description"
+              value={receiptData.description}
+              onChange={handleReceiptDataChange}
+              className="border border-gray-200 p-2 w-full rounded-lg bg-white"
+              rows={2}
+            />
+
+            <label className="block text-sm text-gray-600">Date</label>
+            <input
+              type="date"
+              name="date"
+              value={receiptData.date}
+              onChange={handleReceiptDataChange}
+              className="border border-gray-200 p-2 w-full rounded-lg bg-white"
+            />
+
+            <button
+              type="submit"
+              disabled={savingReceipt}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg mt-2 disabled:opacity-50 font-medium"
+            >
+              {savingReceipt ? "Saving..." : "Confirm Expense"}
+            </button>
+
+            {confirmError && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+                {confirmError}
+              </div>
+            )}
+          </form>
+        )}
+      </div>
+
+      {/* Manual Add Transaction — unchanged fields/behavior */}
       <form
         onSubmit={handleSubmit}
         className="bg-white p-4 rounded-xl shadow mb-4"
@@ -291,151 +527,6 @@ const AddTransaction = ({ onAdd }) => {
           Add
         </button>
       </form>
-
-      <div className="bg-white p-4 rounded-xl shadow">
-        <h2 className="text-xl font-semibold mb-4">Scan Receipt</h2>
-
-        <input
-          type="file"
-          accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-          onChange={handleReceiptSelect}
-          className="border p-2 w-full mb-2"
-        />
-
-        {receiptFile && (
-          <p className="text-sm text-gray-600 mb-2">
-            Selected: {receiptFile.name}
-          </p>
-        )}
-
-        {receiptFile && !previewUrl && (
-          <button
-            type="button"
-            onClick={handleViewReceipt}
-            className="bg-gray-600 text-white px-4 py-2 rounded mr-2 mb-2"
-          >
-            View Receipt
-          </button>
-        )}
-
-        {previewUrl && (
-          <div className="mb-4">
-            <img
-              src={previewUrl}
-              alt="Receipt preview"
-              className="max-w-full max-h-80 rounded border mb-2"
-            />
-            <button
-              type="button"
-              onClick={handleHideReceipt}
-              className="bg-gray-400 text-white px-4 py-2 rounded"
-            >
-              Hide Receipt
-            </button>
-          </div>
-        )}
-
-        <button
-          type="button"
-          onClick={handleScanReceipt}
-          disabled={scanning || !receiptFile}
-          className="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50"
-        >
-          Scan Receipt
-        </button>
-
-        {scanning && (
-          <p className="text-sm text-gray-600 mt-2">Scanning receipt...</p>
-        )}
-
-        {scanError && (
-          <p className="text-sm text-red-500 mt-2">{scanError}</p>
-        )}
-
-        {receiptData && (
-          <form
-            onSubmit={handleConfirmExpense}
-            className="mt-4 p-3 bg-gray-50 rounded-lg border space-y-2"
-          >
-            <h3 className="font-semibold mb-2">Review Receipt</h3>
-
-            <p className="text-sm text-gray-600">
-              Type: <span className="font-medium text-gray-800">Expense</span>
-            </p>
-
-            <label className="block text-sm text-gray-600">Amount</label>
-            <input
-              type="number"
-              name="amount"
-              value={receiptData.amount}
-              onChange={handleReceiptDataChange}
-              className="border p-2 w-full rounded"
-            />
-
-            <label className="block text-sm text-gray-600">Merchant</label>
-            <input
-              type="text"
-              name="merchant"
-              value={receiptData.merchant}
-              onChange={handleReceiptDataChange}
-              className="border p-2 w-full rounded"
-            />
-
-            <label className="block text-sm text-gray-600">Category</label>
-            <select
-              name="category"
-              value={receiptData.category}
-              onChange={handleReceiptDataChange}
-              className="border p-2 w-full rounded"
-            >
-              <option value="">Select category</option>
-              {TRANSACTION_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-
-            <label className="block text-sm text-gray-600">Description</label>
-            <textarea
-              name="description"
-              value={receiptData.description}
-              onChange={handleReceiptDataChange}
-              className="border p-2 w-full rounded"
-              rows={2}
-            />
-
-            <label className="block text-sm text-gray-600">Date</label>
-            <input
-              type="date"
-              name="date"
-              value={receiptData.date}
-              onChange={handleReceiptDataChange}
-              className="border p-2 w-full rounded"
-            />
-
-            <button
-              type="submit"
-              disabled={savingReceipt}
-              className="bg-green-600 text-white px-4 py-2 rounded mt-2 disabled:opacity-50"
-            >
-              Confirm Expense
-            </button>
-
-            {savingReceipt && (
-              <p className="text-sm text-gray-600 mt-2">Saving...</p>
-            )}
-
-            {confirmError && (
-              <p className="text-sm text-red-500 mt-2">{confirmError}</p>
-            )}
-          </form>
-        )}
-
-        {confirmSuccess && (
-          <p className="text-sm text-green-600 mt-2">{confirmSuccess}</p>
-        )}
-      </div>
     </div>
   );
 };
