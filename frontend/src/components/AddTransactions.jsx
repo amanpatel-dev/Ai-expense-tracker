@@ -445,87 +445,130 @@ const AddTransaction = ({ onAdd }) => {
         )}
       </div>
 
-      {/* Manual Add Transaction — unchanged fields/behavior */}
+      {/* Manual Add Transaction — UI redesign only */}
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-4 rounded-xl shadow mb-4"
+        className="bg-white p-5 md:p-6 rounded-2xl shadow border border-gray-100 mb-4"
       >
-        <h2 className="text-xl font-semibold mb-4">Add Transaction</h2>
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Add Transaction</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Enter your income or expense manually.
+            </p>
+          </div>
+          <span className="text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 px-3 py-1 rounded-full">
+            Manual Entry
+          </span>
+        </div>
 
-        <label className="block text-sm text-gray-600 mb-1">Type</label>
-        <select
-          name="type"
-          value={form.type}
-          onChange={handleChange}
-          className="border p-2 w-full mb-2 rounded"
-        >
-          <option value="expense">Expense</option>
-          <option value="income">Income</option>
-        </select>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-600 mb-1.5">
+            Type
+          </label>
+          <select
+            name="type"
+            value={form.type}
+            onChange={handleChange}
+            className="border border-gray-200 p-2.5 w-full rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+          >
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+          </select>
+        </div>
 
-        <label className="block text-sm text-gray-600 mb-1">Amount</label>
-        <input
-          type="number"
-          name="amount"
-          placeholder="Amount"
-          value={form.amount}
-          onChange={handleChange}
-          className="border p-2 w-full mb-2 rounded"
-          required
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1.5">
+              Amount
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
+                ₹
+              </span>
+              <input
+                type="number"
+                name="amount"
+                placeholder="0.00"
+                value={form.amount}
+                onChange={handleChange}
+                className="border border-gray-200 pl-7 pr-3 py-2.5 w-full rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+                required
+              />
+            </div>
+          </div>
 
-        <label className="block text-sm text-gray-600 mb-1">Merchant</label>
-        <input
-          type="text"
-          name="merchant"
-          placeholder="Merchant (optional)"
-          value={form.merchant}
-          onChange={handleChange}
-          className="border p-2 w-full mb-2 rounded"
-        />
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1.5">
+              Merchant
+            </label>
+            <input
+              type="text"
+              name="merchant"
+              placeholder="Merchant (optional)"
+              value={form.merchant}
+              onChange={handleChange}
+              className="border border-gray-200 p-2.5 w-full rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+            />
+          </div>
 
-        <label className="block text-sm text-gray-600 mb-1">Category</label>
-        <select
-          name="category"
-          value={form.category}
-          onChange={handleChange}
-          className="border p-2 w-full mb-2 rounded"
-          required
-        >
-          <option value="">Select category</option>
-          {TRANSACTION_CATEGORIES.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1.5">
+              Category
+            </label>
+            <select
+              name="category"
+              value={form.category}
+              onChange={handleChange}
+              className="border border-gray-200 p-2.5 w-full rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+              required
+            >
+              <option value="">Select category</option>
+              {TRANSACTION_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <label className="block text-sm text-gray-600 mb-1">Description</label>
-        <input
-          type="text"
-          name="description"
-          placeholder="Description"
-          value={form.description}
-          onChange={handleChange}
-          className="border p-2 w-full mb-2 rounded"
-        />
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1.5">
+              Date
+            </label>
+            <input
+              type="date"
+              name="date"
+              value={form.date}
+              onChange={handleChange}
+              className="border border-gray-200 p-2.5 w-full rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+              required
+            />
+          </div>
+        </div>
 
-        <label className="block text-sm text-gray-600 mb-1">Date</label>
-        <input
-          type="date"
-          name="date"
-          value={form.date}
-          onChange={handleChange}
-          className="border p-2 w-full mb-4 rounded"
-          required
-        />
+        <div className="mb-5">
+          <label className="block text-sm font-medium text-gray-600 mb-1.5">
+            Description
+          </label>
+          <textarea
+            name="description"
+            placeholder="What was this transaction for?"
+            value={form.description}
+            onChange={handleChange}
+            rows={3}
+            className="border border-gray-200 p-2.5 w-full rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 resize-y"
+          />
+        </div>
 
-        <button
-          type="submit"
-          className="bg-green-500 text-white px-4 py-2 rounded"
-        >
-          Add
-        </button>
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            className="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-lg font-medium w-full sm:w-auto"
+          >
+            Add Transaction
+          </button>
+        </div>
       </form>
     </div>
   );

@@ -36,6 +36,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null); // which row is being edited
   const [editForm, setEditForm] = useState(emptyEditForm);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState("");
   const navigate = useNavigate();
 
   const fetchTransactions = async () => {
@@ -70,6 +72,7 @@ const Dashboard = () => {
   // Fill the form with the row the user clicked Edit on
   const startEdit = (t) => {
     setEditingId(t._id);
+    setEditError("");
     setEditForm({
       type: t.type || "expense",
       amount: t.amount ?? "",
@@ -83,6 +86,8 @@ const Dashboard = () => {
   const cancelEdit = () => {
     setEditingId(null);
     setEditForm(emptyEditForm);
+    setEditError("");
+    setEditSaving(false);
   };
 
   const handleEditChange = (e) => {
@@ -94,6 +99,7 @@ const Dashboard = () => {
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    setEditError("");
 
     const payload = {
       amount: editForm.amount,
@@ -105,6 +111,7 @@ const Dashboard = () => {
     };
 
     try {
+      setEditSaving(true);
       const res = await API.put(`/transactions/${editingId}`, payload);
 
       // Replace the old item in the list with the updated one
@@ -114,7 +121,13 @@ const Dashboard = () => {
 
       cancelEdit();
     } catch (error) {
-      console.log(error);
+      setEditError(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to update transaction"
+      );
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -186,97 +199,145 @@ const Dashboard = () => {
                 className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md hover:border-gray-200 transition-shadow"
               >
                 {editingId === t._id ? (
-                  <form onSubmit={handleUpdate} className="space-y-2">
-                    <label className="block text-sm text-gray-600">Type</label>
-                    <select
-                      name="type"
-                      value={editForm.type}
-                      onChange={handleEditChange}
-                      className="border p-2 w-full rounded"
-                    >
-                      <option value="expense">Expense</option>
-                      <option value="income">Income</option>
-                    </select>
+                  <form
+                    onSubmit={handleUpdate}
+                    className="bg-gray-50/80 border border-gray-100 rounded-xl p-4 md:p-5"
+                  >
+                    <div className="mb-5">
+                      <h3 className="text-xl font-bold text-gray-900">
+                        Edit Transaction
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Update your transaction details.
+                      </p>
+                    </div>
 
-                    <label className="block text-sm text-gray-600">Amount</label>
-                    <input
-                      type="number"
-                      name="amount"
-                      value={editForm.amount}
-                      onChange={handleEditChange}
-                      className="border p-2 w-full rounded"
-                      required
-                    />
-
-                    <label className="block text-sm text-gray-600">
-                      Merchant
-                    </label>
-                    <input
-                      type="text"
-                      name="merchant"
-                      value={editForm.merchant}
-                      onChange={handleEditChange}
-                      className="border p-2 w-full rounded"
-                      placeholder="Merchant (optional)"
-                    />
-
-                    <label className="block text-sm text-gray-600">
-                      Category
-                    </label>
-                    <select
-                      name="category"
-                      value={editForm.category}
-                      onChange={handleEditChange}
-                      className="border p-2 w-full rounded"
-                      required
-                    >
-                      <option value="">Select category</option>
-                      {!TRANSACTION_CATEGORIES.includes(editForm.category) &&
-                        editForm.category && (
-                          <option value={editForm.category}>
-                            {editForm.category}
-                          </option>
-                        )}
-                      {TRANSACTION_CATEGORIES.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
-                    </select>
-
-                    <label className="block text-sm text-gray-600">
-                      Description
-                    </label>
-                    <input
-                      type="text"
-                      name="description"
-                      value={editForm.description}
-                      onChange={handleEditChange}
-                      className="border p-2 w-full rounded"
-                    />
-
-                    <label className="block text-sm text-gray-600">Date</label>
-                    <input
-                      type="date"
-                      name="date"
-                      value={editForm.date}
-                      onChange={handleEditChange}
-                      className="border p-2 w-full rounded"
-                    />
-
-                    <div className="flex gap-2">
-                      <button
-                        type="submit"
-                        className="bg-blue-500 text-white px-3 py-1 rounded"
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-600 mb-1.5">
+                        Type
+                      </label>
+                      <select
+                        name="type"
+                        value={editForm.type}
+                        onChange={handleEditChange}
+                        className="border border-gray-200 p-2.5 w-full rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
                       >
-                        Save
-                      </button>
+                        <option value="expense">Expense</option>
+                        <option value="income">Income</option>
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1.5">
+                          Amount
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
+                            ₹
+                          </span>
+                          <input
+                            type="number"
+                            name="amount"
+                            value={editForm.amount}
+                            onChange={handleEditChange}
+                            className="border border-gray-200 pl-7 pr-3 py-2.5 w-full rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1.5">
+                          Merchant
+                        </label>
+                        <input
+                          type="text"
+                          name="merchant"
+                          value={editForm.merchant}
+                          onChange={handleEditChange}
+                          className="border border-gray-200 p-2.5 w-full rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+                          placeholder="Merchant (optional)"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1.5">
+                          Category
+                        </label>
+                        <select
+                          name="category"
+                          value={editForm.category}
+                          onChange={handleEditChange}
+                          className="border border-gray-200 p-2.5 w-full rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+                          required
+                        >
+                          <option value="">Select category</option>
+                          {!TRANSACTION_CATEGORIES.includes(
+                            editForm.category
+                          ) &&
+                            editForm.category && (
+                              <option value={editForm.category}>
+                                {editForm.category}
+                              </option>
+                            )}
+                          {TRANSACTION_CATEGORIES.map((cat) => (
+                            <option key={cat} value={cat}>
+                              {cat}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1.5">
+                          Date
+                        </label>
+                        <input
+                          type="date"
+                          name="date"
+                          value={editForm.date}
+                          onChange={handleEditChange}
+                          className="border border-gray-200 p-2.5 w-full rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mb-5">
+                      <label className="block text-sm font-medium text-gray-600 mb-1.5">
+                        Description
+                      </label>
+                      <textarea
+                        name="description"
+                        value={editForm.description}
+                        onChange={handleEditChange}
+                        rows={3}
+                        placeholder="What was this transaction for?"
+                        className="border border-gray-200 p-2.5 w-full rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 resize-y"
+                      />
+                    </div>
+
+                    {editError && (
+                      <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+                        {editError}
+                      </div>
+                    )}
+
+                    <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
                       <button
                         type="button"
                         onClick={cancelEdit}
-                        className="bg-gray-300 px-3 py-1 rounded"
+                        disabled={editSaving}
+                        className="border border-gray-200 bg-white text-gray-700 px-4 py-2.5 rounded-lg font-medium hover:bg-gray-50 disabled:opacity-50"
                       >
                         Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={editSaving}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium disabled:opacity-50"
+                      >
+                        {editSaving ? "Saving..." : "Save Changes"}
                       </button>
                     </div>
                   </form>

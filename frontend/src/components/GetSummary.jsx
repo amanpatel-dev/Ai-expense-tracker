@@ -8,7 +8,7 @@ const formatCurrency = (value) =>
   })}`;
 
 const Summary = ({ transactions }) => {
-  const [showSummary, setShowSummary] = useState(false);
+  const [showSummary, setShowSummary] = useState(true);
   let income = 0;
   let expense = 0;
 
