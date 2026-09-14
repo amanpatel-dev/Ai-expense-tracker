@@ -25,6 +25,17 @@ const transactionSchema = new mongoose.Schema({
   description: {
     type: String
   },
+
+  merchant: {
+    type: String,
+    default: ""
+  },
+
+  source: {
+    type: String,
+    enum: ["manual", "receipt_ai"],
+    default: "manual"
+  },
   
   date: {
     type: Date,
